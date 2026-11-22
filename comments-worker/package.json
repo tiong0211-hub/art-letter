@@ -1,0 +1,15 @@
+{
+  "name": "art-letter-comments",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "db:init:local": "wrangler d1 migrations apply art-letter-comments --local",
+    "db:init": "wrangler d1 migrations apply art-letter-comments --remote",
+    "test": "node test/smoke.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.157.0"
+  }
+}

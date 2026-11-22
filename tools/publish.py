@@ -7,6 +7,7 @@ same result.
   python3 tools/publish.py verify               # check index.html against publication.json
   python3 tools/publish.py add LETTER.json IMG  # publish a new letter (newest first)
   python3 tools/publish.py rehash               # recompute publication.json from index.html
+  python3 tools/publish.py set-comments-api URL  # point the discussion at a comments server
 """
 import base64
 import hashlib
@@ -22,6 +23,7 @@ MANIFEST = ROOT / "publication.json"
 MANIFEST_VERSION = 2
 HASH_SPEC = "artletter-issue-v2"
 
+CONFIG_RE = re.compile(r"(window\.ARTLETTER_CONFIG=)(\{.*?\})(;)")
 DATA_RE = re.compile(r"(window\.ARTLETTER_DATA = )(\{.*?\n\})(;\n)", re.S)
 IMAGES_RE = re.compile(r"(\(\(\)=>\{const images=)(\{.*?\})(;)")
 
@@ -204,6 +206,21 @@ def cmd_add(letter_path, image_path):
     print(f"published {letter['id']}; run `python3 tools/publish.py verify`")
 
 
+def cmd_set_comments_api(url):
+    if not re.fullmatch(r"https://[A-Za-z0-9.-]+(:\d+)?/[^\s\"'<>]*", url):
+        sys.exit("URL must be https://host/path")
+    html, data, images = load()
+    m = CONFIG_RE.search(html)
+    if not m:
+        sys.exit("index.html: ARTLETTER_CONFIG not found")
+    config = json.loads(m.group(2))
+    config["commentsApi"] = url
+    html = CONFIG_RE.sub(lambda m: m.group(1) + json.dumps(config) + m.group(3), html, count=1)
+    HTML.write_text(html, encoding="utf-8")
+    write_manifest(build_manifest(data, images, html))
+    print(f"commentsApi = {url}")
+
+
 KEY_ORDER = ["id", "title", "question", "category", "body", "summary", "reflection",
              "date", "status", "order", "featured", "image", "artwork", "artworks"]
 
@@ -220,6 +237,8 @@ if __name__ == "__main__":
         cmd_verify()
     elif args == ["rehash"]:
         cmd_rehash()
+    elif len(args) == 2 and args[0] == "set-comments-api":
+        cmd_set_comments_api(args[1])
     elif len(args) == 3 and args[0] == "add":
         cmd_add(args[1], args[2])
     else:

@@ -69,3 +69,8 @@ Python으로는 `json.dumps(doc, sort_keys=True, ensure_ascii=False, separators=
 
 - 작품 정보는 소장처 기록(제목·작가·연도·소장처·크레딧) 범위 안에서만 씁니다. 해석을 사실처럼 지어내지 않습니다.
 - 일상의 장면 → 작품 소개 → 사유 → 작은 실천 제안 → 질문으로 맺는 흐름.
+
+## 댓글 서버
+
+`comments-worker/` (Cloudflare Workers + D1). 배포·이전·관리 방법은 `comments-worker/README.md`.
+사이트가 바라보는 댓글 API 주소는 `python3 tools/publish.py set-comments-api <URL>`로 바꿉니다.
