@@ -31,6 +31,8 @@ IMAGES_RE = re.compile(r"(\(\(\)=>\{const images=)(\{.*?\})(;)")
 POSITIONAL_FIELDS = ("order", "featured")
 REQUIRED_FIELDS = ("id", "title", "question", "category", "body", "summary",
                    "reflection", "date", "artwork")
+# Reader-facing topic filters. Add one here deliberately rather than ad hoc.
+CATEGORIES = ("자연과 우주", "철학과 인간", "일상과 감정", "시간과 기억", "관계와 사회")
 REQUIRED_ARTWORK = ("title", "artist", "date", "institution", "sourceUrl",
                     "image", "publicDomain", "credit", "retrievedOn")
 
@@ -60,6 +62,17 @@ def save(html, data, images):
     HTML.write_text(html, encoding="utf-8")
 
 
+def resolve_image(path: str, images: dict) -> bytes:
+    """Image bytes for a reference: embedded data URI (older issues) or a file
+    under the site root such as assets/met-123.jpg (newer issues)."""
+    if path in images:
+        return image_bytes(images[path])
+    f = (ROOT / path).resolve()
+    if path.startswith("assets/") and f.is_file() and ROOT in f.parents:
+        return f.read_bytes()
+    raise KeyError(f"image {path!r} is neither embedded nor a file in assets/")
+
+
 def image_bytes(data_uri: str) -> bytes:
     if not data_uri.startswith("data:") or ";base64," not in data_uri:
         raise ValueError("image is not a base64 data URI")
@@ -71,9 +84,7 @@ def issue_hash(letter: dict, images: dict) -> str:
     """sha256 of the canonical letter, with positional fields removed and every
     image reference replaced by "sha256:<hash of the image bytes>"."""
     def swap(path):
-        if path not in images:
-            raise KeyError(f"{letter.get('id')}: image {path!r} is not embedded")
-        return "sha256:" + sha256(image_bytes(images[path]))
+        return "sha256:" + sha256(resolve_image(path, images))
 
     doc = json.loads(json.dumps(letter))
     for f in POSITIONAL_FIELDS:
@@ -129,7 +140,10 @@ def structural_errors(data, images):
         used.update({l.get("image"), l["artwork"].get("image")} | {a.get("image") for a in l.get("artworks", [])})
     used.discard(None)
     for p in sorted(used - images.keys()):
-        errs.append(f"image {p} referenced but not embedded")
+        try:
+            resolve_image(p, images)
+        except KeyError as e:
+            errs.append(str(e))
     for p in sorted(images.keys() - used):
         errs.append(f"image {p} embedded but unused")
     return errs
@@ -176,18 +190,27 @@ def cmd_add(letter_path, image_path):
     if mime not in ("image/jpeg", "image/png", "image/webp"):
         sys.exit(f"unsupported image type: {img.name}")
     key = letter.get("artwork", {}).get("image") or f"assets/{img.name}"
-    if key in images and image_bytes(images[key]) != raw:
-        sys.exit(f"{key} already embedded with different bytes")
+    if not re.fullmatch(r"assets/[A-Za-z0-9._-]+", key):
+        sys.exit(f"image path must look like assets/<name>: {key}")
+    if key in images:
+        sys.exit(f"{key} is already embedded")
+    target = ROOT / key
+    if target.exists() and target.read_bytes() != raw:
+        sys.exit(f"{key} already exists with different bytes")
     if any(l["id"] == letter.get("id") for l in data["letters"]):
         sys.exit(f"letter id {letter.get('id')} already published")
 
+    if letter.get("category") not in CATEGORIES:
+        sys.exit(f"category must be one of {CATEGORIES}")
     letter.setdefault("status", "verified")
     letter["image"] = key
     letter["artwork"]["image"] = key
     letter.setdefault("artworks", [dict(letter["artwork"])])
     for a in letter["artworks"]:
         a.setdefault("image", key)
-    images[key] = f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
+    # New issues keep images as separate files so index.html stays small.
+    target.parent.mkdir(exist_ok=True)
+    target.write_bytes(raw)
 
     data["letters"].insert(0, letter)
     data["letters"].sort(key=lambda l: l["date"], reverse=True)

@@ -56,6 +56,48 @@ Python으로는 `json.dumps(doc, sort_keys=True, ensure_ascii=False, separators=
 
 3. 커밋 후 push. GitHub Actions가 `verify`를 다시 실행합니다.
 
+## 정기 발행 절차 (매주 화·목 오전 7시 KST, 자동)
+
+예약 작업이 이 절차를 그대로 따릅니다. 사람이 수동으로 발행할 때도 같습니다.
+
+1. **준비**: `main`을 최신으로 받고, 오늘 날짜를 한국 시간으로 정합니다(`TZ=Asia/Seoul date +%F`).
+   그 날짜를 `id`로 쓰는 레터가 이미 있으면 아무것도 하지 않고 끝냅니다.
+2. **돌아보기**: 최근 레터 5편의 주제·카테고리·작가·질문을 읽고, 겹치지 않는 방향을 정합니다.
+   같은 작가는 최근 5편 안에 다시 쓰지 않고, 카테고리는 직전 호와 다르게 합니다.
+3. **작품 고르기**: 계절과 요즘의 하루에 어울리는 주제어로 후보를 찾습니다.
+   ```bash
+   python3 tools/met.py search "<영문 주제어>" 15
+   ```
+   회화·판화·드로잉 중 한 점을 골라 받습니다. 실패하면(공공 도메인 이미지 없음) 다음 후보로 넘어갑니다.
+   ```bash
+   python3 tools/met.py fetch <objectID> /tmp/issue
+   ```
+   `/tmp/issue/artwork.json`(그대로 사용), `facts.json`(사실 확인용), 이미지 파일이 생깁니다.
+4. **원고 쓰기**: `/tmp/issue/letter.json`을 작성합니다. `artwork`에는 `artwork.json` 내용을 그대로 넣습니다.
+   - `category`: 자연과 우주 · 철학과 인간 · 일상과 감정 · 시간과 기억 · 관계와 사회 중 하나
+   - `title`: 질문이나 쉼표가 있는 짧은 한 문장 (예: "평범한 하루에도, 빛은 머물까요?")
+   - `question` = `reflection`: 레터의 중심 질문 한 문장
+   - `body`: 5문단, 문단 사이 빈 줄, 끝에 줄바꿈. ① 일상의 장면 ② 작가·작품 제목(한국어 《》, 필요하면 원제 병기)·연도·소장처 — `facts.json`에 있는 사실만 ③ 작품을 매개로 한 사유와 질문 ④ 오늘 해 볼 수 있는 작은 실천 ⑤ 독자에게 건네는 질문
+   - `summary`: 본문 첫 문단 그대로
+   - 존댓말, 차분한 문체. 그림에 무엇이 그려져 있는지 직접 보지 못했다면 묘사하지 말고 제목·기록에 기대어 씁니다. 해석·일화·전기적 사실을 지어내지 않습니다.
+5. **발행**:
+   ```bash
+   python3 tools/publish.py add /tmp/issue/letter.json /tmp/issue/met-<objectID>.jpg
+   python3 tools/publish.py verify
+   ```
+   `main`에 커밋(`Publish ART LETTER <날짜>`)하고 push합니다. GitHub Pages 반영과 텔레그램 알림은 자동입니다.
+6. **실패 시**: 원인을 남기고 아무것도 push하지 않습니다. 반쯤 된 발행을 올리지 않습니다.
+
+## 텔레그램 알림
+
+`publication.json`이 `main`에 push되면 `.github/workflows/telegram.yml`이 새로 추가된 레터를
+텔레그램으로 보냅니다. 저장소 Settings → Secrets and variables → Actions에 두 값을 등록해야 합니다.
+
+- `TELEGRAM_BOT_TOKEN`: BotFather가 준 봇 토큰
+- `TELEGRAM_CHAT_ID`: 받을 채팅/채널 ID (채널이면 `@채널이름`도 가능, 봇이 관리자여야 함)
+
+미리보기: `python3 tools/notify_telegram.py <기준 커밋> --dry-run`
+
 ## 검사 항목 (`verify`)
 
 - 매니페스트 해시가 현재 `index.html`과 일치
