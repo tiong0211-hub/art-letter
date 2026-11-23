@@ -6,6 +6,7 @@ issue. Used by .github/workflows/telegram.yml; works from any machine.
 
   TELEGRAM_BOT_TOKEN=... TELEGRAM_CHAT_ID=... python3 tools/notify_telegram.py BASE_REV
   python3 tools/notify_telegram.py BASE_REV --dry-run     # print instead of sending
+  python3 tools/notify_telegram.py --latest               # (re)send the newest letter, e.g. to test
 """
 import html
 import json
@@ -63,9 +64,12 @@ def main():
     if not args:
         sys.exit(__doc__)
     dry = "--dry-run" in args
-    base = [a for a in args if a != "--dry-run"][0]
-    new_ids = set(json.loads((ROOT / "publication.json").read_text(encoding="utf-8"))["issues"]) - issues_at(base)
     all_letters = letters()
+    if "--latest" in args:
+        new_ids = {max(all_letters.values(), key=lambda l: l["date"])["id"]}
+    else:
+        base = [a for a in args if not a.startswith("--")][0]
+        new_ids = set(json.loads((ROOT / "publication.json").read_text(encoding="utf-8"))["issues"]) - issues_at(base)
     todo = sorted((all_letters[i] for i in new_ids if i in all_letters), key=lambda l: l["date"])
     if not todo:
         print("no new issues")

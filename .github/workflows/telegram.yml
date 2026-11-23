@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
     paths: [publication.json]
+  workflow_dispatch:   # Actions 탭 > Notify Telegram > Run workflow: 최신 레터를 다시 보냄(테스트용)
 jobs:
   notify:
     runs-on: ubuntu-latest
@@ -18,4 +19,9 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python3 tools/notify_telegram.py ${{ github.event.before }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python3 tools/notify_telegram.py --latest
+          else
+            python3 tools/notify_telegram.py ${{ github.event.before }}
+          fi
