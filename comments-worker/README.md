@@ -20,13 +20,13 @@ npx wrangler d1 create art-letter-comments   # 출력된 database_id를 wrangler
 npm run db:init
 npx wrangler secret put ADMIN_TOKEN          # 긴 임의 문자열 (예: openssl rand -hex 32)
 npx wrangler secret put IP_SALT              # 긴 임의 문자열
-npm run deploy                               # https://art-letter-comments.<계정>.workers.dev 출력
+npm run deploy                               # https://art-letter-comments.artletter-kr.workers.dev 출력
 ```
 
 배포 후 저장소 루트에서 사이트를 새 주소로 바꿉니다.
 
 ```bash
-python3 tools/publish.py set-comments-api https://art-letter-comments.<계정>.workers.dev/api/comments
+python3 tools/publish.py set-comments-api https://art-letter-comments.artletter-kr.workers.dev/api/comments
 python3 tools/publish.py verify
 ```
 
@@ -45,7 +45,7 @@ npx wrangler d1 execute art-letter-comments --remote --file import.sql
 
 ```bash
 curl -X DELETE -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
-  -d '{"id":"<댓글 id>"}' "https://art-letter-comments.<계정>.workers.dev/api/comments?issue=<레터 id>"
+  -d '{"id":"<댓글 id>"}' "https://art-letter-comments.artletter-kr.workers.dev/api/comments?issue=<레터 id>"
 ```
 
 ## 로컬 테스트
