@@ -111,7 +111,8 @@ window.ARTLETTER_DATA = {
           "publicDomain": true,
           "originalImage": "https://collectionapi.metmuseum.org/api/collection/v1/iiif/435991/DP-16589-001/main-image"
         }
-      ]
+      ],
+      "number": 3
     },
     {
       "id": "2026-11-19",
@@ -153,7 +154,8 @@ window.ARTLETTER_DATA = {
           "credit": "H. O. Havemeyer Collection, Bequest of Mrs. H. O. Havemeyer, 1929",
           "retrievedOn": "2026-11-13"
         }
-      ]
+      ],
+      "number": 2
     },
     {
       "id": "2026-11-17",
@@ -195,7 +197,8 @@ window.ARTLETTER_DATA = {
           "credit": "Marquand Collection, Gift of Henry G. Marquand, 1889",
           "retrievedOn": "2026-11-13"
         }
-      ]
+      ],
+      "number": 1
     },
     {
       "id": "pilot-2026-11-14",
@@ -239,7 +242,8 @@ window.ARTLETTER_DATA = {
         }
       ],
       "threadId": "pilot-2026-11-14",
-      "pilot": true
+      "pilot": true,
+      "number": 0
     }
   ],
   "aliases": {
@@ -318,7 +322,7 @@ function letterCard(letter) {
       <img src="${esc(letter.image)}" alt="${esc(letter.artwork.title)} — ${esc(letter.artwork.artist)}" loading="lazy" style="object-position:${esc(letter.imagePosition || 'center')}">
       <span class="card-badge">${DATA.mode === 'public' ? (letter.pilot ? '창간 준비호' : '발행 레터') : letter.status === 'verified' ? '검증 완료 · 프리뷰' : '편집 중 · 프리뷰'}</span>
     </a>
-    <div class="card-content"><div class="card-category"><span>${esc(letter.category)}</span><span>READING ${String(letter.order).padStart(2, '0')}</span></div>
+    <div class="card-content"><div class="card-category"><span>${esc(letter.category)}</span><span>READING ${String(letter.number ?? letter.order).padStart(2, '0')}</span></div>
       <h3><a href="${routeTo(letter.id)}">${esc(letter.title)}</a></h3>
       <p class="card-excerpt">${esc(letter.summary)}</p>
       <div class="card-bottom"><span>${shortDate(letter.date)} &nbsp; · &nbsp; 약 ${readTime(letter)}분 읽기</span>${bookmarkButton(letter)}</div>
