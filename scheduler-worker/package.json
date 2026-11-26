@@ -1,0 +1,13 @@
+{
+  "name": "art-letter-scheduler",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --test-scheduled",
+    "deploy": "wrangler deploy",
+    "test": "node test/schedule.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.157.0"
+  }
+}

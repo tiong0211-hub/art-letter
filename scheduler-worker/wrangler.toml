@@ -1,0 +1,27 @@
+name = "art-letter-scheduler"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+# GitHub 예약 실행(cron)은 몇 시간씩 늦거나 빠집니다. 이 Worker가 정시에
+# art-newsletter 의 publication.yml 을 workflow_dispatch 로 실행합니다.
+# Cloudflare cron 은 UTC 기준입니다. (KST = UTC + 9)
+[triggers]
+crons = [
+  "15 3-10 * * MON,WED",      # 월·수 12:15–19:15 KST 매시: Gemini 검증
+  "0,15,30 11 * * MON,WED",   # 월·수 20:00, 20:15, 20:30 KST: 선정·동결·웹 게시
+  "0,15,30,45 23 * * MON,WED",# 화·목 08:00–08:45 KST: 텔레그램 발송
+  "*/15 0-1 * * TUE,THU"      # 화·목 09:00–10:45 KST: 발송 재시도(09:45 마감)·10:00 종료 처리
+]
+
+[vars]
+GITHUB_REPOSITORY = "tiong0211-hub/art-newsletter"
+WORKFLOW = "publication.yml"
+
+# 실행 기록을 Cloudflare 대시보드(Workers → art-letter-scheduler → Logs)에서 봅니다.
+[observability]
+enabled = true
+
+# 비밀값(코드에 넣지 않음):
+#   npx wrangler secret put GITHUB_TOKEN
+#   (Fine-grained 토큰: 저장소 art-newsletter 하나, Repository permissions → Actions: Read and write)
